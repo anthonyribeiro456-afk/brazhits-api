@@ -1,11 +1,15 @@
 {
   "version": 2,
-  "functions": {
-    "api/auto-register/route.js": {
-      "runtime": "nodejs20.x"
+  "builds": [
+    {
+      "src": "api/auto-register/route.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
-    { "src": "/api/auto-register", "dest": "/api/auto-register/route.js" }
+    {
+      "src": "/api/auto-register",
+      "dest": "/api/auto-register/route.js"
+    }
   ]
 }
