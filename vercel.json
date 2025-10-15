@@ -1,9 +1,9 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/auto-register.js", "use": "@vercel/node" }
-  ],
-  "routes": [
-    { "src": "/api/auto-register", "dest": "api/auto-register.js" }
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
   ]
 }
