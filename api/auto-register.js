@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import admin from "firebase-admin";
 
-// --- Inicializa Firebase Admin (evita múltiplas inits em ambiente serverless) ---
+// ✅ Inicializa o Firebase Admin apenas uma vez
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -15,37 +15,41 @@ if (!admin.apps.length) {
 const auth = admin.auth();
 const db = admin.firestore();
 
-// --- Função principal da rota ---
-export async function POST(req) {
-  try {
-    const body = await req.json();
-    const event = body?.event;
-    const email = body?.data?.customer?.email;
-    const name = body?.data?.customer?.name || "Cliente BrazHits";
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).send("Method Not Allowed");
+  }
 
-    // Ignora eventos não relevantes
+  try {
+    const { event, data } = req.body || {};
+    const email = data?.customer?.email;
+    const name = data?.customer?.name || "Cliente BrazHits";
+
+    // Apenas processa se for compra aprovada
     if (event !== "purchase_approved") {
-      return new Response(JSON.stringify({ msg: "Evento ignorado" }), { status: 200 });
+      return res.status(200).json({ msg: "Evento ignorado" });
     }
 
     if (!email) {
-      return new Response(JSON.stringify({ error: "Email ausente" }), { status: 400 });
+      return res.status(400).json({ error: "Email ausente" });
     }
 
-    // Verifica se já existe usuário
-    let existing = null;
+    // Verifica se o usuário já existe
+    let existingUser = null;
     try {
-      existing = await auth.getUserByEmail(email);
-    } catch {}
+      existingUser = await auth.getUserByEmail(email);
+    } catch {
+      // ignora erro se não existir
+    }
 
-    if (existing) {
-      return new Response(JSON.stringify({ msg: "Usuário já existe" }), { status: 200 });
+    if (existingUser) {
+      return res.status(200).json({ msg: "Usuário já existe" });
     }
 
     // Gera senha aleatória
     const randomPassword = crypto.randomBytes(6).toString("base64").slice(0, 10);
 
-    // Cria usuário no Firebase
+    // Cria usuário no Firebase Auth
     const user = await auth.createUser({
       email,
       password: randomPassword,
@@ -57,36 +61,38 @@ export async function POST(req) {
     await db.collection("users").doc(user.uid).set({
       email,
       name,
-      createdAt: Date.now(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
       origin: "vega-checkout",
     });
 
-    // Envia e-mail (webhook externo)
-    if (process.env.MAIL_WEBHOOK_URL) {
-      await fetch(process.env.MAIL_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: email,
-          subject: "Seus dados de acesso - Packs BrazHits 🎵",
-          html: `
-            <h2>Olá ${name.split(" ")[0]}!</h2>
-            <p>Seu acesso à <b>Área de Membros BrazHits</b> foi liberado com sucesso.</p>
-            <p><b>Email:</b> ${email}<br><b>Senha:</b> ${randomPassword}</p>
-            <a href="https://brazhits.com.br/login" 
-               style="display:inline-block;background:#00E4FF;color:#001A2A;
-               padding:12px 24px;border-radius:8px;
-               text-decoration:none;font-weight:bold;">
-               Acessar Área de Membros
-            </a>
-          `,
-        }),
-      });
-    }
+    // Envia o e-mail automático via Resend API (fetch nativo)
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "BrazHits <noreply@brazhits.com.br>",
+        to: email,
+        subject: "Seus dados de acesso - Packs BrazHits 🎵",
+        html: `
+          <h2>Olá ${name.split(" ")[0]}!</h2>
+          <p>Seu acesso à <b>Área de Membros BrazHits</b> foi liberado com sucesso.</p>
+          <p><b>Email:</b> ${email}<br><b>Senha:</b> ${randomPassword}</p>
+          <a href="https://membros.brazhits.com.br/login" 
+             style="display:inline-block;background:#00E4FF;color:#001A2A;
+             padding:12px 24px;border-radius:8px;
+             text-decoration:none;font-weight:bold;">
+             Acessar Área de Membros
+          </a>
+        `,
+      }),
+    });
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
+    return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Erro interno:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    console.error("Erro no auto-register:", err);
+    return res.status(500).json({ error: err.message });
   }
 }
