@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import admin from "firebase-admin";
 
-// ✅ Inicializa o Firebase Admin apenas uma vez
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -15,7 +14,7 @@ if (!admin.apps.length) {
 const auth = admin.auth();
 const db = admin.firestore();
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
@@ -25,7 +24,6 @@ export default async function handler(req, res) {
     const email = data?.customer?.email;
     const name = data?.customer?.name || "Cliente BrazHits";
 
-    // Apenas processa se for compra aprovada
     if (event !== "purchase_approved") {
       return res.status(200).json({ msg: "Evento ignorado" });
     }
@@ -34,22 +32,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Email ausente" });
     }
 
-    // Verifica se o usuário já existe
     let existingUser = null;
     try {
       existingUser = await auth.getUserByEmail(email);
-    } catch {
-      // ignora erro se não existir
-    }
+    } catch {}
 
     if (existingUser) {
       return res.status(200).json({ msg: "Usuário já existe" });
     }
 
-    // Gera senha aleatória
     const randomPassword = crypto.randomBytes(6).toString("base64").slice(0, 10);
 
-    // Cria usuário no Firebase Auth
     const user = await auth.createUser({
       email,
       password: randomPassword,
@@ -57,7 +50,6 @@ export default async function handler(req, res) {
       emailVerified: true,
     });
 
-    // Registra no Firestore
     await db.collection("users").doc(user.uid).set({
       email,
       name,
@@ -65,7 +57,6 @@ export default async function handler(req, res) {
       origin: "vega-checkout",
     });
 
-    // Envia o e-mail automático via Resend API (fetch nativo)
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -95,4 +86,4 @@ export default async function handler(req, res) {
     console.error("Erro no auto-register:", err);
     return res.status(500).json({ error: err.message });
   }
-}
+};
