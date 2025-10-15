@@ -14,7 +14,12 @@ if (!admin.apps.length) {
 const auth = admin.auth();
 const db = admin.firestore();
 
-module.exports = async (req, res) => {
+// 🔧 importante: define o runtime no arquivo (garante compatibilidade)
+export const config = {
+  runtime: "nodejs20.x",
+};
+
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
@@ -86,4 +91,4 @@ module.exports = async (req, res) => {
     console.error("Erro no auto-register:", err);
     return res.status(500).json({ error: err.message });
   }
-};
+}
