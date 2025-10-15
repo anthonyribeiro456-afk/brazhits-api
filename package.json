@@ -2,7 +2,6 @@
   "name": "brazhits-api",
   "version": "1.0.0",
   "type": "module",
-  "main": "api/auto-register.js",
   "engines": {
     "node": "20.x"
   },
