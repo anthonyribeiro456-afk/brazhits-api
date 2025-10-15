@@ -14,10 +14,10 @@ if (!admin.apps.length) {
 const auth = admin.auth();
 const db = admin.firestore();
 
-// 🔧 importante: define o runtime no arquivo (garante compatibilidade)
 export const config = {
-  runtime: "nodejs20.x",
+  runtime: "nodejs",
 };
+
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
