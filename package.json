@@ -2,10 +2,7 @@
   "name": "brazhits-api",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "start": "node api/auto-register.js"
-  },
+  "main": "api/auto-register.js",
   "dependencies": {
     "firebase-admin": "^12.0.0",
     "node-fetch": "^3.3.2"
