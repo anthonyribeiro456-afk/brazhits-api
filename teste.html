@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste Auto-Register</title>
+</head>
+<body>
+  <h1>Teste de Envio</h1>
+  <button onclick="enviar()">Enviar Teste</button>
+
+  <script>
+    async function enviar() {
+      const resposta = await fetch("https://brazhits-api.vercel.app/api/auto-register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "purchase_approved",
+          data: {
+            customer: {
+              email: "teste@brazhits.com",
+              name: "Cliente Teste"
+            }
+          }
+        })
+      });
+
+      const json = await resposta.json();
+      alert(JSON.stringify(json, null, 2));
+    }
+  </script>
+</body>
+</html>
