@@ -1,7 +1,14 @@
 {
-    "version": 2,
-    "routes": [
-      { "src": "/api/(.*)", "dest": "/api/$1" }
-    ]
-  }
-  
+  "version": 2,
+  "functions": {
+    "api/auto-register/route.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/auto-register",
+      "dest": "/api/auto-register/route.js"
+    }
+  ]
+}
