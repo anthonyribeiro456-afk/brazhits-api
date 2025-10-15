@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste de Cadastro BrazHits</title>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: #001a2a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: #00e4ff;
+      margin-bottom: 20px;
+    }
+    form {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(0, 228, 255, 0.2);
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+    }
+    input[type="text"],
+    input[type="email"] {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #00e4ff;
+      color: #001a2a;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover {
+      background: #00bcd4;
+    }
+    .msg {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 6px;
+      display: none;
+    }
+    .success {
+      background: rgba(0, 255, 127, 0.2);
+      color: #00ff95;
+    }
+    .error {
+      background: rgba(255, 0, 0, 0.2);
+      color: #ff6060;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulador de Cadastro 🎵</h1>
+  <form id="formCadastro">
+    <input type="text" id="nome" placeholder="Nome completo" required />
+    <input type="email" id="email" placeholder="Seu e-mail" required />
+    <button type="submit">Simular Compra Aprovada</button>
+  </form>
+
+  <div id="msg" class="msg"></div>
+
+  <script>
+    const form = document.getElementById("formCadastro");
+    const msg = document.getElementById("msg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.style.display = "none";
+
+      const email = document.getElementById("email").value.trim();
+      const name = document.getElementById("nome").value.trim();
+
+      msg.textContent = "Enviando dados...";
+      msg.className = "msg";
+      msg.style.display = "block";
+
+      try {
+        const res = await fetch("https://brazhits-api.vercel.app/api/auto-register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "purchase_approved",
+            data: { customer: { email, name } },
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          msg.textContent = "✅ Cadastro realizado com sucesso! Verifique seu e-mail.";
+          msg.className = "msg success";
+        } else {
+          msg.textContent =
+            "⚠️ Erro ao cadastrar: " + (data.error || data.msg || "Tente novamente.");
+          msg.className = "msg error";
+        }
+      } catch (error) {
+        msg.textContent = "❌ Erro de conexão: " + error.message;
+        msg.className = "msg error";
+      }
+    });
+  </script>
+</body>
+</html>
