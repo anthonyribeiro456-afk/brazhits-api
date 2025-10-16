@@ -20,17 +20,20 @@ export const config = {
 
 
 export default async function handler(req, res) {
+
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
   try {
-    const { event, data } = req.body || {};
-    const email = data?.customer?.email;
-    const name = data?.customer?.name || "Cliente BrazHits";
+    const { customer, status } = req.body || {};
+    const email = customer?.email;
+    const name = customer?.name || "Cliente BrazHits";
 
-    if (event !== "purchase_approved") {
-      return res.status(200).json({ msg: "Evento ignorado" });
+
+   // Processa apenas quando o pagamento estiver aprovado
+    if (req.body.status !== "approved") {
+      return res.status(200).json({ msg: "Pagamento não aprovado, ignorado" });
     }
 
     if (!email) {
